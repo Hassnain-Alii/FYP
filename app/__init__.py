@@ -50,7 +50,14 @@ def create_app():
     # --- Core Flask Configuration ---
     app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY', 'dev-secret-key-change-in-production')
     app.config['PREFERRED_URL_SCHEME'] = 'https'
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chat_agent.db'
+    
+    # Vercel's filesystem is read-only except for /tmp.
+    if os.environ.get('VERCEL') == '1':
+        db_path = 'sqlite:////tmp/chat_agent.db'
+    else:
+        db_path = 'sqlite:///chat_agent.db'
+        
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', db_path)
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
     # --- Session & Security Configuration ---

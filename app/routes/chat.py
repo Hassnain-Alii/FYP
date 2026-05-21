@@ -71,78 +71,82 @@ def send_message():
     Returns:
         JSON response with 'response', 'message_id', and usage statistics.
     """
-    limit = current_app.config['FREE_TIER_LIMIT']
-    
-    # 1. Enforcement: Check if user has exceeded their daily free-tier limit
-    if not current_user.can_send_message(limit):
-        return jsonify({
-            'error': 'limit_exceeded',
-            'message': 'You have reached your daily message limit.',
-            'daily_count': current_user.daily_message_count,
-            'limit': limit,
-            'remaining': 0
-        }), 429
-    
-    # 2. Input Validation
-    data = request.get_json()
-    if not data or not data.get('message'):
-        return jsonify({'error': 'No message provided'}), 400
-    
-    user_message = data.get('message', '').strip()
-    if not user_message:
-        return jsonify({'error': 'Empty message'}), 400
-    
-    # 3. Session Management: Retrieve conversation history by session ID
-    session_id = data.get('session_id', str(uuid.uuid4()))
-    conversation = ConversationHistory.query.filter_by(
-        user_id=current_user.id,
-        session_id=session_id
-    ).first()
-    
-    if not conversation:
-        # Create a new conversation record if it doesn't exist
-        conversation = ConversationHistory(
+    try:
+        limit = current_app.config['FREE_TIER_LIMIT']
+        
+        # 1. Enforcement: Check if user has exceeded their daily free-tier limit
+        if not current_user.can_send_message(limit):
+            return jsonify({
+                'error': 'limit_exceeded',
+                'message': 'You have reached your daily message limit.',
+                'daily_count': current_user.daily_message_count,
+                'limit': limit,
+                'remaining': 0
+            }), 429
+        # 2. Input Validation
+        data = request.get_json()
+        if not data or not data.get('message'):
+            return jsonify({'error': 'No message provided'}), 400
+        
+        user_message = data.get('message', '').strip()
+        if not user_message:
+            return jsonify({'error': 'Empty message'}), 400
+        
+        # 3. Session Management: Retrieve conversation history by session ID
+        session_id = data.get('session_id', str(uuid.uuid4()))
+        conversation = ConversationHistory.query.filter_by(
             user_id=current_user.id,
-            session_id=session_id,
-            messages_json='[]'
+            session_id=session_id
+        ).first()
+        
+        if not conversation:
+            # Create a new conversation record if it doesn't exist
+            conversation = ConversationHistory(
+                user_id=current_user.id,
+                session_id=session_id,
+                messages_json='[]'
+            )
+            db.session.add(conversation)
+            db.session.commit()
+        
+        # 4. Context Retrieval: Get the last 10 messages for short-term memory
+        history = conversation.messages[-10:] if conversation.messages else []
+        
+        # 5. AI Generation: Delegate to the ai_service layer
+        ai_response = generate_ai_response(
+            user_message,
+            history,
+            current_app.config['AI_API_ENDPOINT'],
+            current_app.config['AI_API_KEY'],
+            current_app.config['AI_MODEL_NAME'],
+            current_user.id
         )
-        db.session.add(conversation)
-        db.session.commit()
-    
-    # 4. Context Retrieval: Get the last 10 messages for short-term memory
-    history = conversation.messages[-10:] if conversation.messages else []
-    
-    # 5. AI Generation: Delegate to the ai_service layer
-    ai_response = generate_ai_response(
-        user_message,
-        history,
-        current_app.config['AI_API_ENDPOINT'],
-        current_app.config['AI_API_KEY'],
-        current_app.config['AI_MODEL_NAME'],
-        current_user.id
-    )
 
-    # 6. Persistence: Record the actual message and AI response
-    message = Message(
-        user_id=current_user.id,
-        content=user_message,
-        response=ai_response
-    )
-    db.session.add(message)
-    
-    # 7. History Update: Append to the session's message list
-    conversation.add_message('user', user_message)
-    conversation.add_message('assistant', ai_response)
-    
-    # 8. Usage Tracking: Increment the user's daily counter
-    current_user.increment_message_count()
-    
-    # Set conversation title to first 40 chars of user message if not set
-    if not conversation.title:
-        conversation.title = user_message[:40]
-    
-    # Commit all changes to the database
-    db.session.commit()
+        # 6. Persistence: Record the actual message and AI response
+        message = Message(
+            user_id=current_user.id,
+            content=user_message,
+            response=ai_response
+        )
+        db.session.add(message)
+        
+        # 7. History Update: Append to the session's message list
+        conversation.add_message('user', user_message)
+        conversation.add_message('assistant', ai_response)
+        
+        # 8. Usage Tracking: Increment the user's daily counter
+        current_user.increment_message_count()
+        
+        # Set conversation title to first 40 chars of user message if not set
+        if not conversation.title:
+            conversation.title = user_message[:40]
+        
+        # Commit all changes to the database
+        db.session.commit()
+        
+    except Exception as e:
+        import traceback
+        return jsonify({'error': 'Internal Server Error', 'details': str(e), 'trace': traceback.format_exc()}), 500
     
     return jsonify({
         'response': ai_response,
