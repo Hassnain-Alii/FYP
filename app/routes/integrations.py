@@ -206,9 +206,12 @@ def handle_integration(provider):
     # =====================================================
     # DELETE
     # =====================================================
-    Integration.query.filter_by(
-        user_id=current_user.id,
-        provider=provider
-    ).delete()
+    if request.method == 'DELETE':
+        Integration.query.filter_by(
+            user_id=current_user.id,
+            provider=provider
+        ).delete()
 
-    db.session.commit()
+        db.session.commit()
+
+        return jsonify({"message": "Integration removed successfully"})

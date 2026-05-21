@@ -36,7 +36,8 @@
         <div class="nav-user">
             <img src="{{ current_user.picture or 'https://ui-avatars.com/api/?name=' + current_user.name }}" 
                  alt="{{ current_user.name }}" 
-                 class="user-avatar">
+                 class="user-avatar"
+                 referrerpolicy="no-referrer">
             <span class="user-name">{{ current_user.name }}</span>
             <a href="{{ url_for('auth.logout') }}" class="nav-link logout-btn">
                 <span class="nav-icon">🚪</span>
