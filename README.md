@@ -6,6 +6,40 @@ An intelligent AI-powered chat application featuring Google OAuth authentication
 ![Flask](https://img.shields.io/badge/Flask-3.0-green.svg)
 ![License](https://img.shields.io/badge/License-MIT-yellow.svg)
 
+## 🌐 How to Access / Run the Project
+
+You can experience and test this project in two ways: online via our live deployment or by running a local server on your machine.
+
+### Option 1: View Online (Live Web App)
+The easiest way to see the project in action is to visit the live deployment!
+- **Live Web App:** [https://fyp-xi-flame.vercel.app](https://fyp-xi-flame.vercel.app)
+- **GitHub Repository:** [https://github.com/Hassnain-Alii/FYP](https://github.com/Hassnain-Alii/FYP)
+
+*(Note: The live version is hosted on Vercel and connects to a Supabase PostgreSQL database for persistent storage).*
+
+### Option 2: Run Local Server
+If you want to view the code, test modifications, or run the project locally on your PC, you can easily start the Flask server. 
+
+To start the local server, run the following command in your terminal:
+```bash
+python run.py
+```
+This will start the application locally at `http://localhost:5000`.
+
+#### Using Ngrok for WhatsApp Webhooks
+If you are testing the **WhatsApp Business Webhook** integration locally, you will need a stable, public domain for Meta to send WhatsApp messages to. This is where `ngrok` comes in!
+
+**What is ngrok and why do we use it?**
+`ngrok` is a developer tool that safely exposes your local server to the public internet. Since Meta/WhatsApp cannot send data to `http://localhost:5000` (because that address only exists on your private computer), `ngrok` generates a secure, public URL (like `https://random-string.ngrok-free.app`) that instantly forwards traffic directly to your local PC.
+
+To use it, first start your Flask app (`python run.py`), and then in a new terminal window run:
+```bash
+ngrok http 5000
+```
+Copy the secure `https` forwarding URL provided by ngrok and paste it into your WhatsApp Developer Dashboard to receive real-time messages locally!
+
+---
+
 ## ✨ Features
 
 - **🔐 Google OAuth Authentication** - Secure sign-in with Google accounts
