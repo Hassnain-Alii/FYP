@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AI Chat Agent - Intelligent customer support powered by GPT-OSS-120B">
+    <title>{% block title %}AI Chat Agent{% endblock %}</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Base Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    
+    {% block head %}{% endblock %}
+</head>
+<body>
+    {% if current_user.is_authenticated %}
+    <nav class="navbar">
+        <div class="nav-brand">
+            <span class="nav-logo">🤖</span>
+            <span class="nav-title">AI Chat Agent</span>
+        </div>
+        <div class="nav-links">
+            <a href="{{ url_for('chat.chat_page') }}" class="nav-link {% if request.endpoint == 'chat.chat_page' %}active{% endif %}">
+                <span class="nav-icon">💬</span>
+                Chat
+            </a>
+            <a href="{{ url_for('integrations.settings_page') }}" class="nav-link {% if request.endpoint == 'integrations.settings_page' %}active{% endif %}">
+                <span class="nav-icon">⚙️</span>
+                Settings
+            </a>
+        </div>
+        <div class="nav-user">
+            <img src="{{ current_user.picture or 'https://ui-avatars.com/api/?name=' + current_user.name }}" 
+                 alt="{{ current_user.name }}" 
+                 class="user-avatar">
+            <span class="user-name">{{ current_user.name }}</span>
+            <a href="{{ url_for('auth.logout') }}" class="nav-link logout-btn">
+                <span class="nav-icon">🚪</span>
+                Logout
+            </a>
+        </div>
+    </nav>
+    {% endif %}
+    
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-messages">
+            {% for category, message in messages %}
+            <div class="flash-message flash-{{ category }}">
+                {{ message }}
+                <button class="flash-close" onclick="this.parentElement.remove()">×</button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% endwith %}
+    
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

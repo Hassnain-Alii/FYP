@@ -1,0 +1,256 @@
+{% extends "base.html" %} {% block title %}Settings - AI Chat Agent{% endblock
+%} {% block head %}
+<!-- Settings Page Stylesheet -->
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/settings.css') }}"
+/>
+{% endblock %} {% block content %}
+<div class="settings-container">
+  <div class="settings-header">
+    <h1>⚙️ Integration Settings</h1>
+    <p>
+      Configure WhatsApp and e-commerce integrations for your AI chat agent.
+    </p>
+  </div>
+
+  <div class="global-webhook-info" style="background: var(--bg-card, rgba(255, 255, 255, 0.05)); padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; border: 1px solid var(--border-color, #444);">
+    <h3 style="margin-bottom: 1rem;">WhatsApp Webhook Details</h3>
+    <p style="margin-bottom: 1.5rem; font-size: 0.9em; opacity: 0.9;">
+      Copy these details and paste them into the Meta Developer Portal to configure your WhatsApp webhook.
+    </p>
+    
+    <div class="webhook-fields" style="display: flex; gap: 1rem; flex-wrap: wrap;">
+      <div class="form-group" style="flex: 1; min-width: 300px; margin-bottom: 0;">
+        <label>Callback URL</label>
+        <div class="copy-input-group" onclick="copyToClipboard('{{ webhook_url }}', 'Callback URL copied!')" title="Click to copy" style="position: relative; cursor: pointer;">
+          <input type="text" readonly value="{{ webhook_url }}" style="cursor: pointer; padding-right: 2.5rem; width: 100%; box-sizing: border-box;" />
+          <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 1.2rem; pointer-events: none;">📋</span>
+        </div>
+      </div>
+
+      <div class="form-group" style="flex: 1; min-width: 300px; margin-bottom: 0;">
+        <label>Verify Token</label>
+        <div style="display: flex; gap: 0.5rem; align-items: stretch;">
+          <div class="copy-input-group" onclick="copyToClipboard(document.getElementById('displayVerifyToken').value, 'Verify Token copied!')" title="Click to copy" style="position: relative; cursor: pointer; flex: 1;">
+            <input type="text" id="displayVerifyToken" readonly value="{{ verify_token }}" style="cursor: pointer; padding-right: 2.5rem; width: 100%; box-sizing: border-box;" />
+            <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-size: 1.2rem; pointer-events: none;">📋</span>
+          </div>
+          <button type="button" class="btn btn-secondary" onclick="changeVerifyToken()" style="white-space: nowrap; height: 100%; min-height: 40px; padding: 0 1rem; border-radius: 6px; background: rgba(255,255,255,0.1); border: 1px solid var(--border-color); color: inherit; cursor: pointer; display: flex; align-items: center; justify-content: center;">Change</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-grid">
+    <!-- WhatsApp Integration -->
+    <div class="settings-card">
+      <div class="card-header">
+        <div class="card-icon whatsapp">📱</div>
+        <div class="card-title">
+          <h2>WhatsApp Integration</h2>
+          <p>Connect your AI agent to WhatsApp Business</p>
+        </div>
+        <div class="card-status" id="whatsappStatus">
+          <span class="status-badge not-configured">Not Configured</span>
+        </div>
+      </div>
+
+      <form
+        class="settings-form"
+        id="whatsappForm"
+        onsubmit="saveWhatsApp(event)"
+      >
+        <div class="form-group">
+          <label for="whatsappPhone">Phone Number ID</label>
+          <input
+            type="tel"
+            id="whatsappPhone"
+            name="phone_number_id"
+            placeholder="e.g., 1150144218173348"
+            required
+          />
+          <span class="form-hint">
+            Found in Meta Developer Portal > WhatsApp > API Setup
+          </span>
+        </div>
+
+        <div class="form-group">
+          <label for="whatsappApiKey">Access Token</label>
+          <div class="password-input">
+            <input
+              type="password"
+              id="whatsappApiKey"
+              name="access_token"
+              placeholder="Paste your Permanent Access Token"
+              required
+            />
+            <button
+              type="button"
+              class="toggle-visibility"
+              onclick="togglePassword('whatsappApiKey')"
+            >
+              👁️
+            </button>
+          </div>
+        </div>
+
+        <!-- Webhook URL removed from form as it is generated above -->
+
+        <div class="form-group">
+          <label for="whatsappBusiness">Business Name (Optional)</label>
+          <input
+            type="text"
+            id="whatsappBusiness"
+            name="business_name"
+            placeholder="Your Business Name"
+          />
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">
+            <span class="btn-icon">💾</span>
+            Save WhatsApp Settings
+          </button>
+          <button
+            type="button"
+            class="btn btn-danger"
+            onclick="deleteIntegration('whatsapp')"
+            id="deleteWhatsapp"
+            style="display: none"
+          >
+            <span class="btn-icon">🗑️</span>
+            Remove
+          </button>
+        </div>
+      </form>
+
+      <div class="integration-info">
+        <h4>📋 Setup Instructions</h4>
+        <ol>
+          <li>
+            Create a Meta Business account at
+            <a href="https://business.facebook.com" target="_blank"
+              >business.facebook.com</a
+            >
+          </li>
+          <li>Apply for WhatsApp Business API access</li>
+          <li>Once approved, generate an API key</li>
+          <li>Enter your phone number and API key above</li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- Unified E-commerce Integration -->
+    <div class="settings-card">
+      <div class="card-header">
+        <div class="card-icon ecommerce" id="ecommerceIcon">🛒</div>
+        <div class="card-title">
+          <h2>E-commerce Integration</h2>
+          <p>Connect your online store or custom backend</p>
+        </div>
+        <div class="card-status" id="ecommerceStatus">
+          <span class="status-badge not-configured">Not Configured</span>
+        </div>
+      </div>
+
+      <div style="padding: 0 1.5rem 1rem;">
+        <label for="ecommercePlatformSelector" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Select Platform</label>
+        <div style="position: relative;">
+          <select id="ecommercePlatformSelector" onchange="changeEcommercePlatform()" style="width: 100%; padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border-color); background: rgba(0, 0, 0, 0.2); color: var(--text-primary); appearance: none; cursor: pointer;">
+            <option value="">-- Select Platform --</option>
+            <option value="shopify">Shopify</option>
+            <option value="woocommerce">WooCommerce</option>
+            <option value="custom_api">Custom API</option>
+          </select>
+          <span style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%); pointer-events: none;">▼</span>
+        </div>
+      </div>
+
+      <form
+        class="settings-form"
+        id="ecommerceForm"
+        onsubmit="saveEcommerce(event)"
+        style="display: none;"
+      >
+        <!-- Common Store URL / Endpoint -->
+        <div class="form-group">
+          <label id="storeUrlLabel" for="storeUrl">Store URL</label>
+          <input
+            type="url"
+            id="storeUrl"
+            name="store_url"
+            placeholder="https://mystore.com"
+            required
+          />
+        </div>
+
+<!-- Shopify fields: Client ID, Client Secret, Access Token -->
+        <div class="form-group" id="clientIdGroup">
+          <label id="clientIdLabel" for="storeClientId">Client ID</label>
+          <div class="password-input">
+            <input type="text" id="storeClientId" name="client_id" placeholder="Your Client ID">
+            <button type="button" class="toggle-visibility" onclick="togglePassword('storeClientId')">👁️</button>
+          </div>
+        </div>
+        <div class="form-group" id="clientSecretGroup">
+          <label id="clientSecretLabel" for="storeClientSecret">Client Secret</label>
+          <div class="password-input">
+            <input type="password" id="storeClientSecret" name="client_secret" placeholder="Your Client Secret">
+            <button type="button" class="toggle-visibility" onclick="togglePassword('storeClientSecret')">👁️</button>
+          </div>
+        </div>
+        <div class="form-group" id="accessTokenGroup">
+          <label id="accessTokenLabel" for="storeAccessToken">Access Token</label>
+          <div class="password-input">
+            <input type="password" id="storeAccessToken" name="access_token" placeholder="Your Access Token">
+            <button type="button" class="toggle-visibility" onclick="togglePassword('storeAccessToken')">👁️</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="storeWebhook">Webhook URL (Optional)</label>
+          <input
+            type="url"
+            id="storeWebhook"
+            name="webhook_url"
+            placeholder="https://your-domain.com/webhook"
+          />
+        </div>
+        
+        <div class="form-group">
+          <label id="storeNameLabel" for="storeName">Store Name (Optional)</label>
+          <input
+            type="text"
+            id="storeName"
+            name="store_name"
+            placeholder="My Store"
+          />
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary" id="saveEcommerceBtn">
+            <span class="btn-icon">💾</span>
+            Save Integration
+          </button>
+          <button
+            type="button"
+            class="btn btn-danger"
+            onclick="deleteEcommerceIntegration()"
+            id="deleteEcommerce"
+            style="display: none"
+          >
+            <span class="btn-icon">🗑️</span>
+            Remove
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Notifications -->
+<div class="toast-container" id="toastContainer"></div>
+{% endblock %} {% block scripts %}
+<script src="{{ url_for('static', filename='js/settings.js') }}"></script>
+{% endblock %}
